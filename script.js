@@ -2,6 +2,35 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { ParametricGeometry } from "three/examples/jsm/Addons.js";
 
+function cube() {
+  const geometry = new THREE.BoxGeometry(1, 1, 1);
+
+  const vertexShader = `
+  varying vec3 vNormal;
+  void main() {
+    vNormal = normalize(normalMatrix * normal);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+  `;
+
+  const fragmentShader = `
+  varying vec3 vNormal;
+  void main() {
+    // Simple gradient effect based on the normal direction
+    float intensity = dot(vNormal, vec3(0.0, 0.0, 1.0));
+    gl_FragColor = vec4(intensity, intensity, intensity, 1.0);
+  }
+  `;
+
+  const material = new THREE.ShaderMaterial({
+    vertexShader: vertexShader,
+    fragmentShader: fragmentShader,
+  });
+
+  const cube = new THREE.Mesh(geometry, material);
+  scene.add(cube);
+}
+
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -23,52 +52,76 @@ controls.enableDamping = true;
 const axesHelper = new THREE.AxesHelper(20);
 scene.add(axesHelper);
 
-const geometry = new THREE.BoxGeometry(1, 1, 1);
+// cube();
 
-const vertexShader = `
-varying vec3 vNormal;
-void main() {
-  vNormal = normalize(normalMatrix * normal);
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+function f(x) {
+  return x ** 2;
 }
-`;
 
-const fragmentShader = `
-varying vec3 vNormal;
-void main() {
-  // Simple gradient effect based on the normal direction
-  float intensity = dot(vNormal, vec3(0.0, 0.0, 1.0));
-  gl_FragColor = vec4(intensity, intensity, intensity, 1.0);
+function g(x) {
+  return Math.sqrt(x);
 }
-`;
 
-const material = new THREE.ShaderMaterial({
-  vertexShader: vertexShader,
-  fragmentShader: fragmentShader,
-});
+const xAxis = 0;
+const yAxis = 1;
 
-const cube = new THREE.Mesh(geometry, material);
-// scene.add(cube);
+// TODO: Fix this function (does not output same result as curveFunction given same params)
+function generateParametricCurve(func, min, max, axisOfRotation) {
+  const parametricCurve = (u, v, target) => {
+    u = u * 2 * Math.PI;
+    v = v * (max - min) + min;
 
-// Parametric curve function: x(v), y(v, u), z(v, u)
+    const x = v ? axisOfRotation === xAxis : v * Math.cos(u);
+    const y = func(v) * Math.cos(u) ? axisOfRotation === xAxis : func(v);
+    const z =
+      func(v) * Math.sin(u) ? axisOfRotation === xAxis : v * Math.sin(u);
+
+    target.set(x, y, z);
+  };
+
+  return parametricCurve;
+}
+
 function curveFunction(u, v, target) {
+  let min = 0;
+  let max = 2;
   u = u * 2 * Math.PI;
-  v = v * Math.PI;
+  v = v * (max - min) + min;
 
-  // Define the parametric equations
-  const x = v * Math.cos(u);
-  const y = Math.sin(3 * v);
-  const z = v * Math.sin(u);
+  const x = v;
+  const y = f(v) * Math.cos(u);
+  const z = f(v) * Math.sin(u);
 
-  // Set the target position
   target.set(x, y, z);
 }
 
-const parametricGeometry = new ParametricGeometry(curveFunction, 100, 100);
+console.log(generateParametricCurve(f, 0, 2, xAxis));
+console.log(curveFunction);
+
+// const curve1Geometry = new ParametricGeometry(curveFunction, 100, 100);
+const curve1Geometry = new ParametricGeometry(
+  generateParametricCurve(f, 0, 2, xAxis),
+  100,
+  100
+);
+
+// const curve1Geometry = new ParametricGeometry(
+//   generateParametricCurve(f, 0, 2, xAxis),
+//   100,
+//   100
+// );
+// const curve2Geometry = new ParametricGeometry(
+//   generateParametricCurve(g, 0, 2, xAxis),
+//   100,
+//   100
+// );
 
 const parametricMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
-const line = new THREE.Line(parametricGeometry, parametricMaterial);
-scene.add(line);
+const curve1 = new THREE.Line(curve1Geometry, parametricMaterial);
+// const curve2 = new THREE.Line(curve2Geometry, parametricMaterial);
+
+scene.add(curve1);
+// scene.add(curve2);
 
 function animate() {
   // cube.rotation.x += 0.01;
