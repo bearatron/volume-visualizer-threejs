@@ -120,59 +120,115 @@ const parametricMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
 const curve1 = new THREE.Line(curve1Geometry, parametricMaterial);
 // const curve2 = new THREE.Line(curve2Geometry, parametricMaterial);
 
-function plotFunction(x) {
-  return Math.cosh(x);
+function findIntersectionPoints(func1, func2, range, step) {
+  const intersections = [];
+  for (let x = -range; x <= range; x += step) {
+    if (Math.abs(func1(x) - func2(x)) < 0.01) {
+      intersections.push(x);
+    }
+  }
+  return intersections;
 }
 
-let filledArea, curveLine;
-
-function addRotatingFunction() {
-  const curvePoints = [];
+function drawFunctionsAndAreaBetween(func1, func2, color1, color2, fillColor) {
+  const range = 10; // X-axis range
+  const step = 0.01; // Granularity of the plot
+  const curvePoints1 = [];
+  const curvePoints2 = [];
   const fillPoints = [];
-  const range = 20; // X-axis range
-  const step = 0.1; // Granularity of the plot
 
-  for (let x = -range; x <= range; x += step) {
-    const y = plotFunction(x);
-    curvePoints.push(new THREE.Vector2(x, Math.max(y, 0))); // Points on the curve
-    fillPoints.push(new THREE.Vector2(x, Math.max(y, 0))); // Points above or on the X-axis
+  // Find intersection points
+  const intersections = findIntersectionPoints(func1, func2, range, step);
+  if (intersections.length < 2) {
+    console.error("The two functions do not intersect within the range.");
+    return;
   }
 
-  fillPoints.push(new THREE.Vector2(range, 0)); // Bottom-right corner (X-axis)
-  fillPoints.push(new THREE.Vector2(-range, 0)); // Bottom-left corner (X-axis)
+  const minIntersection = Math.min(...intersections);
+  const maxIntersection = Math.max(...intersections);
 
+  // Generate points for the curves and the area between
+  for (let x = minIntersection; x <= maxIntersection; x += step) {
+    const y1 = func1(x); // First function
+    const y2 = func2(x); // Second function
+
+    // Determine which function is on top and which is on the bottom
+    const topY = Math.max(y1, y2);
+    const bottomY = Math.min(y1, y2);
+
+    curvePoints1.push(new THREE.Vector3(x, y1, 0)); // Points for the first curve
+    curvePoints2.push(new THREE.Vector3(x, y2, 0)); // Points for the second curve
+
+    // Add the points for the fill area
+    fillPoints.push(new THREE.Vector2(x, topY)); // Top boundary
+    fillPoints.unshift(new THREE.Vector2(x, bottomY)); // Bottom boundary
+  }
+
+  // Draw the first curve
+  const curveGeometry1 = new THREE.BufferGeometry().setFromPoints(curvePoints1);
+  const curveMaterial1 = new THREE.LineBasicMaterial({ color: color1 });
+  const curveLine1 = new THREE.Line(curveGeometry1, curveMaterial1);
+  scene.add(curveLine1);
+
+  // Draw the second curve
+  const curveGeometry2 = new THREE.BufferGeometry().setFromPoints(curvePoints2);
+  const curveMaterial2 = new THREE.LineBasicMaterial({ color: color2 });
+  const curveLine2 = new THREE.Line(curveGeometry2, curveMaterial2);
+  scene.add(curveLine2);
+
+  // Create the shape and geometry for the filled area
   const shape = new THREE.Shape(fillPoints);
   const geometry = new THREE.ShapeGeometry(shape);
   const material = new THREE.MeshBasicMaterial({
-    color: 0xffaaaa,
+    color: fillColor,
     side: THREE.DoubleSide,
     opacity: 0.5,
     transparent: true,
   });
-  filledArea = new THREE.Mesh(geometry, material);
+  const filledArea = new THREE.Mesh(geometry, material);
   scene.add(filledArea);
 
-  const curveGeometry = new THREE.BufferGeometry().setFromPoints(
-    curvePoints.map((p) => new THREE.Vector3(p.x, p.y, 0))
-  );
-  const curveMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
-  curveLine = new THREE.Line(curveGeometry, curveMaterial);
-  scene.add(curveLine);
+  return { filledArea, curveLine1, curveLine2 };
 }
 
-addRotatingFunction();
 
+function plotFunction1(x) {
+  return x**2; 
+}
 
-scene.add(curve1);
-// scene.add(curve2);
+function plotFunction2(x) {
+  return x**3;
+}
+
+// Draw the functions and the area between them
+const { filledArea, curveLine1, curveLine2 } = drawFunctionsAndAreaBetween(
+  plotFunction1,
+  plotFunction2,
+  0xff0000, // Red line for the first function
+  0x0000ff, // Blue line for the second function
+  0x00ff00 // Green fill for the area between curves
+);
+
+let globalRotationAxis = "y"; // Can be "x", "y", or "z"
 
 function animate() {
-  // cube.rotation.x += 0.01;
-  // cube.rotation.y += 0.01;
-  if (filledArea && curveLine) {
-    filledArea.rotation.x += 0.01;
-    curveLine.rotation.x += 0.01;
+  if (filledArea) {
+    if (globalRotationAxis === "x") filledArea.rotation.x += 0.01;
+    if (globalRotationAxis === "y") filledArea.rotation.y += 0.01;
+    if (globalRotationAxis === "z") filledArea.rotation.z += 0.01;
   }
+
+  if (curveLine1) {
+    if (globalRotationAxis === "x") curveLine1.rotation.x += 0.01;
+    if (globalRotationAxis === "y") curveLine1.rotation.y += 0.01;
+    if (globalRotationAxis === "z") curveLine1.rotation.z += 0.01;
+  }
+  if (curveLine2) {
+    if (globalRotationAxis === "x") curveLine2.rotation.x += 0.01;
+    if (globalRotationAxis === "y") curveLine2.rotation.y += 0.01;
+    if (globalRotationAxis === "z") curveLine2.rotation.z += 0.01;
+  }
+
   controls.update();
   renderer.render(scene, camera);
 }
@@ -186,3 +242,4 @@ function onResize() {
 
 window.addEventListener("resize", onResize);
 animate();
+
