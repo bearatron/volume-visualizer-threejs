@@ -55,11 +55,11 @@ scene.add(axesHelper);
 // cube();
 
 function f(x) {
-  return x ** 2;
+  return x ** (1/2);
 }
 
 function g(x) {
-  return Math.sqrt(x);
+  return x**3;
 }
 
 const xAxis = 0;
@@ -84,7 +84,7 @@ function generateParametricCurve(func, min, max, axisOfRotation) {
 
 function curveFunction(u, v, target) {
   let min = 0;
-  let max = 2;
+  let max = 1;
   u = u * 2 * Math.PI;
   v = v * (max - min) + min;
 
@@ -95,34 +95,36 @@ function curveFunction(u, v, target) {
   target.set(x, y, z);
 }
 
-console.log(generateParametricCurve(f, 0, 2, xAxis));
+function curveFunction2(u, v, target) {
+  let min = 0;
+  let max = 1;
+  u = u * 2 * Math.PI;
+  v = v * (max - min) + min;
+
+  const x = v;
+  const y = g(v) * Math.cos(u);
+  const z = g(v) * Math.sin(u);
+
+  target.set(x, y, z);
+}
+
+console.log(generateParametricCurve(f, 0, 1, xAxis));
 console.log(curveFunction);
 
-// const curve1Geometry = new ParametricGeometry(curveFunction, 100, 100);
-const curve1Geometry = new ParametricGeometry(
-  generateParametricCurve(f, 0, 2, xAxis),
-  100,
-  100
-);
+const curve1Geometry = new ParametricGeometry(curveFunction, 100, 100);
 
-// const curve1Geometry = new ParametricGeometry(
-//   generateParametricCurve(f, 0, 2, xAxis),
-//   100,
-//   100
-// );
-// const curve2Geometry = new ParametricGeometry(
-//   generateParametricCurve(g, 0, 2, xAxis),
-//   100,
-//   100
-// );
+const curve2Geometry = new ParametricGeometry(curveFunction2, 100, 100);
 
-const parametricMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+const parametricMaterial = new THREE.LineBasicMaterial({ color: 0xfc03df });
 const curve1 = new THREE.Line(curve1Geometry, parametricMaterial);
-// const curve2 = new THREE.Line(curve2Geometry, parametricMaterial);
+scene.add(curve1);
+const parametricMaterial2 = new THREE.LineBasicMaterial({ color: 0xfcba03});
+const curve2 = new THREE.Line(curve2Geometry, parametricMaterial2);
+scene.add(curve2);
 
-function findIntersectionPoints(func1, func2, range, step) {
+function findIntersectionPoints(func1, func2, start, end, step) {
   const intersections = [];
-  for (let x = -range; x <= range; x += step) {
+  for (let x = -start; x <= end; x += step) {
     if (Math.abs(func1(x) - func2(x)) < 0.01) {
       intersections.push(x);
     }
@@ -131,24 +133,25 @@ function findIntersectionPoints(func1, func2, range, step) {
 }
 
 function drawFunctionsAndAreaBetween(func1, func2, color1, color2, fillColor) {
-  const range = 10; // X-axis range
+  const start = 0;
+  const end = 10;
+  const cutoffMax = 0.5;
+  const cutoffMin = 0.2
   const step = 0.01; // Granularity of the plot
   const curvePoints1 = [];
   const curvePoints2 = [];
   const fillPoints = [];
 
   // Find intersection points
-  const intersections = findIntersectionPoints(func1, func2, range, step);
-  if (intersections.length < 2) {
-    console.error("The two functions do not intersect within the range.");
-    return;
-  }
+  const intersections = findIntersectionPoints(func1, func2, start, end, step);
 
   const minIntersection = Math.min(...intersections);
   const maxIntersection = Math.max(...intersections);
+  const effectiveMin = Math.max(minIntersection, cutoffMin)
+  const effectiveMaxX = Math.min(maxIntersection, cutoffMax);
 
   // Generate points for the curves and the area between
-  for (let x = minIntersection; x <= maxIntersection; x += step) {
+  for (let x = effectiveMin; x <= effectiveMaxX; x += step) {
     const y1 = func1(x); // First function
     const y2 = func2(x); // Second function
 
@@ -193,7 +196,7 @@ function drawFunctionsAndAreaBetween(func1, func2, color1, color2, fillColor) {
 
 
 function plotFunction1(x) {
-  return x**2; 
+  return Math.sqrt(Math.abs(x)); 
 }
 
 function plotFunction2(x) {
@@ -209,7 +212,7 @@ const { filledArea, curveLine1, curveLine2 } = drawFunctionsAndAreaBetween(
   0x00ff00 // Green fill for the area between curves
 );
 
-let globalRotationAxis = "y"; // Can be "x", "y", or "z"
+let globalRotationAxis = "x"; // Can be "x", "y", or "z"
 
 function animate() {
   if (filledArea) {
