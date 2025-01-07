@@ -55,7 +55,7 @@ scene.add(axesHelper);
 // cube();
 
 function f(x) {
-  return x ** (1/2);
+  return Math.sqrt(Math.abs(x));
 }
 
 function g(x) {
@@ -65,62 +65,6 @@ function g(x) {
 const xAxis = 0;
 const yAxis = 1;
 
-// TODO: Fix this function (does not output same result as curveFunction given same params)
-function generateParametricCurve(func, min, max, axisOfRotation) {
-  const parametricCurve = (u, v, target) => {
-    u = u * 2 * Math.PI;
-    v = v * (max - min) + min;
-
-    const x = v ? axisOfRotation === xAxis : v * Math.cos(u);
-    const y = func(v) * Math.cos(u) ? axisOfRotation === xAxis : func(v);
-    const z =
-      func(v) * Math.sin(u) ? axisOfRotation === xAxis : v * Math.sin(u);
-
-    target.set(x, y, z);
-  };
-
-  return parametricCurve;
-}
-
-function curveFunction(u, v, target) {
-  let min = 0;
-  let max = 1;
-  u = u * 2 * Math.PI;
-  v = v * (max - min) + min;
-
-  const x = v;
-  const y = f(v) * Math.cos(u);
-  const z = f(v) * Math.sin(u);
-
-  target.set(x, y, z);
-}
-
-function curveFunction2(u, v, target) {
-  let min = 0;
-  let max = 1;
-  u = u * 2 * Math.PI;
-  v = v * (max - min) + min;
-
-  const x = v;
-  const y = g(v) * Math.cos(u);
-  const z = g(v) * Math.sin(u);
-
-  target.set(x, y, z);
-}
-
-console.log(generateParametricCurve(f, 0, 1, xAxis));
-console.log(curveFunction);
-
-const curve1Geometry = new ParametricGeometry(curveFunction, 100, 100);
-
-const curve2Geometry = new ParametricGeometry(curveFunction2, 100, 100);
-
-const parametricMaterial = new THREE.LineBasicMaterial({ color: 0xfc03df });
-const curve1 = new THREE.Line(curve1Geometry, parametricMaterial);
-scene.add(curve1);
-const parametricMaterial2 = new THREE.LineBasicMaterial({ color: 0xfcba03});
-const curve2 = new THREE.Line(curve2Geometry, parametricMaterial2);
-scene.add(curve2);
 
 function findIntersectionPoints(func1, func2, start, end, step) {
   const intersections = [];
@@ -132,21 +76,87 @@ function findIntersectionPoints(func1, func2, start, end, step) {
   return intersections;
 }
 
+const intersection1 = findIntersectionPoints(f,g, 10, 10, 0.01)
+let min = Math.min(...intersection1);
+let max = Math.max(...intersection1);
+
+// TODO: Fix this function (does not output same result as curveFunction given same params)
+function generateParametricCurve(func, min, max, axisOfRotation) {
+  const parametricCurve = (u, v, target) => {
+    u = u * 2 * Math.PI;
+    v = v * (max - min) + min;
+
+    const x = (axisOfRotation === xAxis) ? v : v * Math.cos(u);
+    const y = (axisOfRotation === xAxis) ? (func(v) * Math.cos(u)) : func(v);
+    const z =(axisOfRotation === xAxis) ? (func(v) * Math.sin(u)) : v * Math.sin(u);
+
+    target.set(x, y, z);
+  };
+
+  return parametricCurve;
+}
+
+
+console.log(intersection1)
+
+function curveFunction(u, v, target) {
+  
+  u = u * 2 * Math.PI;
+  v = v * (max - min) + min;
+
+  const x = v;
+  const y = f(v) * Math.cos(u);
+  const z = f(v) * Math.sin(u);
+
+  target.set(x, y, z);
+}
+
+function curveFunction2(u, v, target) {
+  let min = Math.min(...intersection1);
+  let max = Math.max(...intersection1);
+  u = u * 2 * Math.PI;
+  v = v * (max - min) + min;
+
+  const x = v;
+  const y = g(v) * Math.cos(u);
+  const z = g(v) * Math.sin(u);
+
+  target.set(x, y, z);
+}
+
+
+
+// const curve1Geometry = new ParametricGeometry(curveFunction, 100, 100);
+
+// const curve2Geometry = new ParametricGeometry(curveFunction2, 100, 100);
+
+const parametricMaterial = new THREE.LineBasicMaterial({ color: 0xfc03df });
+// const curve1 = new THREE.Line(curve1Geometry, parametricMaterial);
+//scene.add(curve1);
+const parametricMaterial2 = new THREE.LineBasicMaterial({ color: 0xfcba03});
+// const curve2 = new THREE.Line(curve2Geometry, parametricMaterial2);
+//scene.add(curve2);
+const parametricCurve1 = new ParametricGeometry(generateParametricCurve(f, min, max, yAxis), 100, 100);
+const parametricCurve2 = new ParametricGeometry(generateParametricCurve(g, min, max, yAxis), 100, 100);
+const curveparam = new THREE.Line(parametricCurve1, parametricMaterial)
+scene.add(curveparam)
+const curveparam2 = new THREE.Line(parametricCurve2, parametricMaterial2)
+scene.add(curveparam2)
+
+
+
 function drawFunctionsAndAreaBetween(func1, func2, color1, color2, fillColor) {
-  const start = 0;
+  const start = 10;
   const end = 10;
-  const cutoffMax = 0.5;
-  const cutoffMin = 0.2
+  const cutoffMax = 10;
+  const cutoffMin = -10;
   const step = 0.01; // Granularity of the plot
   const curvePoints1 = [];
   const curvePoints2 = [];
   const fillPoints = [];
 
-  // Find intersection points
-  const intersections = findIntersectionPoints(func1, func2, start, end, step);
-
-  const minIntersection = Math.min(...intersections);
-  const maxIntersection = Math.max(...intersections);
+  const minIntersection = Math.min(...intersection1);
+  const maxIntersection = Math.max(...intersection1);
   const effectiveMin = Math.max(minIntersection, cutoffMin)
   const effectiveMaxX = Math.min(maxIntersection, cutoffMax);
 
@@ -194,25 +204,16 @@ function drawFunctionsAndAreaBetween(func1, func2, color1, color2, fillColor) {
   return { filledArea, curveLine1, curveLine2 };
 }
 
-
-function plotFunction1(x) {
-  return Math.sqrt(Math.abs(x)); 
-}
-
-function plotFunction2(x) {
-  return x**3;
-}
-
 // Draw the functions and the area between them
 const { filledArea, curveLine1, curveLine2 } = drawFunctionsAndAreaBetween(
-  plotFunction1,
-  plotFunction2,
+  f,
+  g,
   0xff0000, // Red line for the first function
   0x0000ff, // Blue line for the second function
   0x00ff00 // Green fill for the area between curves
 );
 
-let globalRotationAxis = "x"; // Can be "x", "y", or "z"
+let globalRotationAxis = "y"; // Can be "x", "y", or "z"
 
 function animate() {
   if (filledArea) {
