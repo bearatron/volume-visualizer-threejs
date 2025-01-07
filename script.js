@@ -55,21 +55,21 @@ scene.add(axesHelper);
 // cube();
 
 function f(x) {
-  return Math.sqrt(Math.abs(x));
-}
-
-function g(x) {
   return x**3;
 }
 
-const xAxis = 0;
-const yAxis = 1;
+function g(x) {
+  return x**2;
+}
+
+const XAXIS = 0;
+const YAXIS = 1;
 
 
 function findIntersectionPoints(func1, func2, start, end, step) {
   const intersections = [];
   for (let x = -start; x <= end; x += step) {
-    if (Math.abs(func1(x) - func2(x)) < 0.01) {
+    if (Math.abs(func1(x) - func2(x)) < 0.0001) {
       intersections.push(x);
     }
   }
@@ -79,16 +79,21 @@ function findIntersectionPoints(func1, func2, start, end, step) {
 const intersection1 = findIntersectionPoints(f,g, 10, 10, 0.01)
 let min = Math.min(...intersection1);
 let max = Math.max(...intersection1);
+const cutoffMax = 100;
+const cutoffMin = -100;
 
 // TODO: Fix this function (does not output same result as curveFunction given same params)
 function generateParametricCurve(func, min, max, axisOfRotation) {
+
+  const effectiveMin = Math.max(min, cutoffMin)
+  const effectiveMaxX = Math.min(max, cutoffMax);
   const parametricCurve = (u, v, target) => {
     u = u * 2 * Math.PI;
-    v = v * (max - min) + min;
+    v = v * (effectiveMaxX - effectiveMin) + effectiveMin;
 
-    const x = (axisOfRotation === xAxis) ? v : v * Math.cos(u);
-    const y = (axisOfRotation === xAxis) ? (func(v) * Math.cos(u)) : func(v);
-    const z =(axisOfRotation === xAxis) ? (func(v) * Math.sin(u)) : v * Math.sin(u);
+    const x = (axisOfRotation === XAXIS) ? v : v * Math.cos(u);
+    const y = (axisOfRotation === XAXIS) ? (func(v) * Math.cos(u)) : func(v);
+    const z =(axisOfRotation === XAXIS) ? (func(v) * Math.sin(u)) : v * Math.sin(u);
 
     target.set(x, y, z);
   };
@@ -99,30 +104,30 @@ function generateParametricCurve(func, min, max, axisOfRotation) {
 
 console.log(intersection1)
 
-function curveFunction(u, v, target) {
+// function curveFunction(u, v, target) {
   
-  u = u * 2 * Math.PI;
-  v = v * (max - min) + min;
+//   u = u * 2 * Math.PI;
+//   v = v * (max - min) + min;
 
-  const x = v;
-  const y = f(v) * Math.cos(u);
-  const z = f(v) * Math.sin(u);
+//   const x = v;
+//   const y = f(v) * Math.cos(u);
+//   const z = f(v) * Math.sin(u);
 
-  target.set(x, y, z);
-}
+//   target.set(x, y, z);
+// }
 
-function curveFunction2(u, v, target) {
-  let min = Math.min(...intersection1);
-  let max = Math.max(...intersection1);
-  u = u * 2 * Math.PI;
-  v = v * (max - min) + min;
+// function curveFunction2(u, v, target) {
+//   let min = Math.min(...intersection1);
+//   let max = Math.max(...intersection1);
+//   u = u * 2 * Math.PI;
+//   v = v * (max - min) + min;
 
-  const x = v;
-  const y = g(v) * Math.cos(u);
-  const z = g(v) * Math.sin(u);
+//   const x = v;
+//   const y = g(v) * Math.cos(u);
+//   const z = g(v) * Math.sin(u);
 
-  target.set(x, y, z);
-}
+//   target.set(x, y, z);
+// }
 
 
 
@@ -136,8 +141,8 @@ const parametricMaterial = new THREE.LineBasicMaterial({ color: 0xfc03df });
 const parametricMaterial2 = new THREE.LineBasicMaterial({ color: 0xfcba03});
 // const curve2 = new THREE.Line(curve2Geometry, parametricMaterial2);
 //scene.add(curve2);
-const parametricCurve1 = new ParametricGeometry(generateParametricCurve(f, min, max, yAxis), 100, 100);
-const parametricCurve2 = new ParametricGeometry(generateParametricCurve(g, min, max, yAxis), 100, 100);
+const parametricCurve1 = new ParametricGeometry(generateParametricCurve(f, min, max, YAXIS), 100, 100);
+const parametricCurve2 = new ParametricGeometry(generateParametricCurve(g, min, max, YAXIS), 100, 100);
 const curveparam = new THREE.Line(parametricCurve1, parametricMaterial)
 scene.add(curveparam)
 const curveparam2 = new THREE.Line(parametricCurve2, parametricMaterial2)
@@ -146,10 +151,6 @@ scene.add(curveparam2)
 
 
 function drawFunctionsAndAreaBetween(func1, func2, color1, color2, fillColor) {
-  const start = 10;
-  const end = 10;
-  const cutoffMax = 10;
-  const cutoffMin = -10;
   const step = 0.01; // Granularity of the plot
   const curvePoints1 = [];
   const curvePoints2 = [];
@@ -213,24 +214,21 @@ const { filledArea, curveLine1, curveLine2 } = drawFunctionsAndAreaBetween(
   0x00ff00 // Green fill for the area between curves
 );
 
-let globalRotationAxis = "y"; // Can be "x", "y", or "z"
+let globalRotationAxis = 1; // Can be "x", "y", or "z"
 
 function animate() {
   if (filledArea) {
-    if (globalRotationAxis === "x") filledArea.rotation.x += 0.01;
-    if (globalRotationAxis === "y") filledArea.rotation.y += 0.01;
-    if (globalRotationAxis === "z") filledArea.rotation.z += 0.01;
+    if (globalRotationAxis === XAXIS) filledArea.rotation.x += 0.01;
+    if (globalRotationAxis === YAXIS) filledArea.rotation.y += 0.01;
   }
 
   if (curveLine1) {
     if (globalRotationAxis === "x") curveLine1.rotation.x += 0.01;
     if (globalRotationAxis === "y") curveLine1.rotation.y += 0.01;
-    if (globalRotationAxis === "z") curveLine1.rotation.z += 0.01;
   }
   if (curveLine2) {
     if (globalRotationAxis === "x") curveLine2.rotation.x += 0.01;
     if (globalRotationAxis === "y") curveLine2.rotation.y += 0.01;
-    if (globalRotationAxis === "z") curveLine2.rotation.z += 0.01;
   }
 
   controls.update();
