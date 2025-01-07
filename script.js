@@ -46,7 +46,6 @@ renderer.setAnimationLoop(animate);
 document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
-console.log(controls);
 controls.enableDamping = true;
 
 const axesHelper = new THREE.AxesHelper(20);
@@ -55,7 +54,7 @@ scene.add(axesHelper);
 // cube();
 
 function f(x) {
-  return Math.exp(x)-1;
+  return Math.tan(x);
 }
 
 function g(x) {
@@ -69,14 +68,15 @@ const YAXIS = 1;
 function findIntersectionPoints(func1, func2, start, end, step) {
   const intersections = [];
   for (let x = -start; x <= end; x += step) {
-    if (Math.abs(func1(x) - func2(x)) < 0.001) {
+    // console.log(Math.abs(func1(x) - func2(x)));
+    if (Math.abs(func1(x) - func2(x)) < 0.01) {
       intersections.push(x);
     }
   }
   return intersections;
 }
 
-const intersection1 = findIntersectionPoints(f,g, 10, 10, 0.001)
+const intersection1 = findIntersectionPoints(f,g, 10, 10, 0.0001)
 let min = Math.min(...intersection1);
 let max = Math.max(...intersection1);
 const cutoffMax = 100;
@@ -101,7 +101,7 @@ function generateParametricCurve(func, min, max, axisOfRotation) {
 }
 
 
-console.log(intersection1)
+// console.log(intersection1)
 
 const parametricMaterial = new THREE.LineBasicMaterial({ color: 0xfc03df });
 const parametricMaterial2 = new THREE.LineBasicMaterial({ color: 0xfcba03});
