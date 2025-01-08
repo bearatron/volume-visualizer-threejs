@@ -68,9 +68,10 @@ const YAXIS = 1;
 function findIntersectionPoints(func1, func2, start, end, step) {
   const intersections = [];
   for (let x = -start; x <= end; x += step) {
-    // console.log(Math.abs(func1(x) - func2(x)));
     if (Math.abs(func1(x) - func2(x)) < 0.01) {
-      intersections.push(x);
+      if (!intersections.some(val => Math.abs(val - x) < 0.02)) {
+        intersections.push(x);
+      }
     }
   }
   return intersections;
@@ -79,16 +80,16 @@ function findIntersectionPoints(func1, func2, start, end, step) {
 const intersection1 = findIntersectionPoints(f,g, 10, 10, 0.0001)
 let min = Math.min(...intersection1);
 let max = Math.max(...intersection1);
-const cutoffMax = 100;
-const cutoffMin = -100;
+const cutoffMax = 2;
+const cutoffMin = -2;
 
 function generateParametricCurve(func, min, max, axisOfRotation) {
 
-  const effectiveMin = Math.max(min, cutoffMin)
+  const effectiveMinX = Math.max(min, cutoffMin)
   const effectiveMaxX = Math.min(max, cutoffMax);
   const parametricCurve = (u, v, target) => {
     u = u * 2 * Math.PI;
-    v = v * (effectiveMaxX - effectiveMin) + effectiveMin;
+    v = v * (effectiveMaxX - effectiveMinX) + effectiveMinX;
 
     const x = (axisOfRotation === XAXIS) ? v : v * Math.cos(u);
     const y = (axisOfRotation === XAXIS) ? (func(v) * Math.cos(u)) : func(v);
@@ -101,7 +102,7 @@ function generateParametricCurve(func, min, max, axisOfRotation) {
 }
 
 
-// console.log(intersection1)
+ console.log(intersection1)
 
 const parametricMaterial = new THREE.LineBasicMaterial({ color: 0xfc03df });
 const parametricMaterial2 = new THREE.LineBasicMaterial({ color: 0xfcba03});
@@ -119,14 +120,20 @@ function drawFunctionsAndAreaBetween(func1, func2, color1, color2, fillColor) {
   const curvePoints1 = [];
   const curvePoints2 = [];
   const fillPoints = [];
-
-  const minIntersection = Math.min(...intersection1);
-  const maxIntersection = Math.max(...intersection1);
-  const effectiveMin = Math.max(minIntersection, cutoffMin)
-  const effectiveMaxX = Math.min(maxIntersection, cutoffMax);
+  let effectiveMaxX;
+  let effectiveMinX
+  if(intersection1.length > 1){
+    const minIntersection = Math.min(...intersection1);
+    const maxIntersection = Math.max(...intersection1);
+    effectiveMinX = Math.max(minIntersection, cutoffMin)
+    effectiveMaxX = Math.min(maxIntersection, cutoffMax);
+  } else {
+    effectiveMinX = cutoffMin;
+    effectiveMaxX = cutoffMax;
+  }
 
   // Generate points for the curves and the area between
-  for (let x = effectiveMin; x <= effectiveMaxX; x += step) {
+  for (let x = effectiveMinX; x <= effectiveMaxX; x += step) {
     const y1 = func1(x); // First function
     const y2 = func2(x); // Second function
 
@@ -187,12 +194,12 @@ function animate() {
   }
 
   if (curveLine1) {
-    if (globalRotationAxis === "x") curveLine1.rotation.x += 0.01;
-    if (globalRotationAxis === "y") curveLine1.rotation.y += 0.01;
+    if (globalRotationAxis === XAXIS) curveLine1.rotation.x += 0.01;
+    if (globalRotationAxis === YAXIS) curveLine1.rotation.y += 0.01;
   }
   if (curveLine2) {
-    if (globalRotationAxis === "x") curveLine2.rotation.x += 0.01;
-    if (globalRotationAxis === "y") curveLine2.rotation.y += 0.01;
+    if (globalRotationAxis === XAXIS) curveLine2.rotation.x += 0.01;
+    if (globalRotationAxis === YAXIS) curveLine2.rotation.y += 0.01;
   }
 
   controls.update();
