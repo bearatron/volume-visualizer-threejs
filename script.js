@@ -54,7 +54,7 @@ scene.add(axesHelper);
 // cube();
 
 function f(x) {
-  return Math.tan(x);
+  return Math.exp(x)-1;
 }
 
 function g(x) {
@@ -80,13 +80,24 @@ function findIntersectionPoints(func1, func2, start, end, step) {
 const intersection1 = findIntersectionPoints(f,g, 10, 10, 0.0001)
 let min = Math.min(...intersection1);
 let max = Math.max(...intersection1);
-const cutoffMax = 2;
-const cutoffMin = -2;
+const cutoffMax = 5;
+const cutoffMin = -5;
+let globalRotationAxis = 0; // Can be 0 for x axis and 1 for y axis
+
 
 function generateParametricCurve(func, min, max, axisOfRotation) {
 
-  const effectiveMinX = Math.max(min, cutoffMin)
-  const effectiveMaxX = Math.min(max, cutoffMax);
+  let effectiveMaxX;
+  let effectiveMinX;
+  if(intersection1.length > 1){
+    const minIntersection = Math.min(...intersection1);
+    const maxIntersection = Math.max(...intersection1);
+    effectiveMinX = Math.max(minIntersection, cutoffMin)
+    effectiveMaxX = Math.min(maxIntersection, cutoffMax);
+  } else {
+    effectiveMinX = cutoffMin;
+    effectiveMaxX = cutoffMax;
+  }
   const parametricCurve = (u, v, target) => {
     u = u * 2 * Math.PI;
     v = v * (effectiveMaxX - effectiveMinX) + effectiveMinX;
@@ -102,12 +113,12 @@ function generateParametricCurve(func, min, max, axisOfRotation) {
 }
 
 
- console.log(intersection1)
+ console.log(intersection1);
 
 const parametricMaterial = new THREE.LineBasicMaterial({ color: 0xfc03df });
 const parametricMaterial2 = new THREE.LineBasicMaterial({ color: 0xfcba03});
-const parametricCurve1 = new ParametricGeometry(generateParametricCurve(f, min, max, YAXIS), 100, 100);
-const parametricCurve2 = new ParametricGeometry(generateParametricCurve(g, min, max, YAXIS), 100, 100);
+const parametricCurve1 = new ParametricGeometry(generateParametricCurve(f, min, max, globalRotationAxis), 100, 100);
+const parametricCurve2 = new ParametricGeometry(generateParametricCurve(g, min, max, globalRotationAxis), 100, 100);
 const curveparam = new THREE.Line(parametricCurve1, parametricMaterial)
 scene.add(curveparam)
 const curveparam2 = new THREE.Line(parametricCurve2, parametricMaterial2)
@@ -121,7 +132,7 @@ function drawFunctionsAndAreaBetween(func1, func2, color1, color2, fillColor) {
   const curvePoints2 = [];
   const fillPoints = [];
   let effectiveMaxX;
-  let effectiveMinX
+  let effectiveMinX;
   if(intersection1.length > 1){
     const minIntersection = Math.min(...intersection1);
     const maxIntersection = Math.max(...intersection1);
@@ -185,7 +196,6 @@ const { filledArea, curveLine1, curveLine2 } = drawFunctionsAndAreaBetween(
   0x00ff00 // Green fill for the area between curves
 );
 
-let globalRotationAxis = 1; // Can be "x", "y", or "z"
 
 function animate() {
   if (filledArea) {
