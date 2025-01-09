@@ -54,11 +54,11 @@ scene.add(axesHelper);
 // cube();
 
 function f(x) {
-  return Math.exp(x)-1;
+  return Math.log(x);
 }
 
 function g(x) {
-  return x**3;
+  return x**2;
 }
 
 const XAXIS = 0;
@@ -66,10 +66,14 @@ const YAXIS = 1;
 
 
 function findIntersectionPoints(func1, func2, start, end, step) {
+  if (((func1(0) === 0)&&(func1(1000) === 0)) || ((func2(0) === 0)&&(func2(1000) === 0))) {
+    return [0]; // Special case when f(x) = 0 or g(x) = 0
+  }
+
   const intersections = [];
   for (let x = -start; x <= end; x += step) {
     if (Math.abs(func1(x) - func2(x)) < 0.01) {
-      if (!intersections.some(val => Math.abs(val - x) < 0.02)) {
+      if (!intersections.some(val => Math.abs(val - x) < 0.04)) {
         intersections.push(x);
       }
     }
@@ -81,7 +85,7 @@ const intersection1 = findIntersectionPoints(f,g, 10, 10, 0.0001)
 let min = Math.min(...intersection1);
 let max = Math.max(...intersection1);
 const cutoffMax = 5;
-const cutoffMin = -5;
+const cutoffMin = 0.1; // You must set this to greater than 0 for logarithmic functions
 let globalRotationAxis = 0; // Can be 0 for x axis and 1 for y axis
 
 
@@ -115,15 +119,19 @@ function generateParametricCurve(func, min, max, axisOfRotation) {
 
  console.log(intersection1);
 
-const parametricMaterial = new THREE.LineBasicMaterial({ color: 0xfc03df });
-const parametricMaterial2 = new THREE.LineBasicMaterial({ color: 0xfcba03});
+const parametricMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+const parametricMaterial2 = new THREE.LineBasicMaterial({ color: 0x0000ff});
 const parametricCurve1 = new ParametricGeometry(generateParametricCurve(f, min, max, globalRotationAxis), 100, 100);
 const parametricCurve2 = new ParametricGeometry(generateParametricCurve(g, min, max, globalRotationAxis), 100, 100);
 const curveparam = new THREE.Line(parametricCurve1, parametricMaterial)
-scene.add(curveparam)
 const curveparam2 = new THREE.Line(parametricCurve2, parametricMaterial2)
-scene.add(curveparam2)
 
+if(!((f(0) === 0)&&(f(1000) === 0))){
+  scene.add(curveparam)
+}
+if(!((g(0) === 0)&&(g(1000) === 0))){
+  scene.add(curveparam2)
+}
 
 
 function drawFunctionsAndAreaBetween(func1, func2, color1, color2, fillColor) {
@@ -196,6 +204,100 @@ const { filledArea, curveLine1, curveLine2 } = drawFunctionsAndAreaBetween(
   0x00ff00 // Green fill for the area between curves
 );
 
+function drawEnclosingCircle(radius, position, axis, color) {
+  const circleGeometry = new THREE.CircleGeometry(radius, 64); // High segment count for a smooth circle
+  const circleMaterial = new THREE.MeshBasicMaterial({
+    color: color,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.5,
+  });
+
+  const circle = new THREE.Mesh(circleGeometry, circleMaterial);
+
+  // Rotate and position the circle based on the axis of rotation
+  if (axis === XAXIS) {
+    circle.rotation.y = Math.PI / 2; // Rotate around the y-axis to align with the x-axis
+    circle.position.set(position, 0, 0);
+  } else if (axis === YAXIS) {
+    circle.rotation.x = Math.PI / 2; // Rotate around the x-axis to align with the y-axis
+    circle.position.set(0, position, 0);
+  }
+
+  scene.add(circle);
+  return circle;
+}
+
+
+function generateVolume(func1, func2, minX, maxX, axisOfRotation) {
+  const points = [];
+  const segments = 500; // Number of segments for the curves
+  const angleSteps = 100; // Number of steps for the rotation
+
+  for (let i = 0; i <= segments; i++) {
+    const x = minX + (i / segments) * (maxX - minX); // Current x value
+    const y1 = func1(x); // First function's value at x
+    const y2 = func2(x); // Second function's value at x
+
+    for (let j = 0; j <= angleSteps; j++) {
+      const angle = (j / angleSteps) * Math.PI * 2; // Current angle in the rotation
+
+      if (axisOfRotation === XAXIS) {
+        // Rotation around the x-axis
+        points.push(
+          x,                       // X coordinate (unchanged for x-axis rotation)
+          y1 * Math.cos(angle),    // Y coordinate (rotated around x-axis)
+          y1 * Math.sin(angle)     // Z coordinate (rotated around x-axis)
+        );
+        points.push(
+          x,
+          y2 * Math.cos(angle),
+          y2 * Math.sin(angle)
+        );
+      } else if (axisOfRotation === YAXIS) {
+        // Rotation around the y-axis
+        points.push(
+          x * Math.cos(angle),     // X coordinate (rotated around y-axis)
+          y1,                      // Y coordinate (unchanged for y-axis rotation)
+          x * Math.sin(angle)      // Z coordinate (rotated around y-axis)
+        );
+        points.push(
+          x * Math.cos(angle),
+          y2,
+          x * Math.sin(angle)
+        );
+      }
+    }
+  }
+
+  const vertices = new Float32Array(points);
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+
+  const material = new THREE.MeshBasicMaterial({
+    color: 0xf5c242,
+    side: THREE.DoubleSide,
+    opacity: 0.3,
+    transparent: true,
+  });
+
+  return new THREE.Mesh(geometry, material);
+}
+
+// Example usage:
+// Define the volume for rotation around the x-axis and add it to the scene
+const volumeMeshX = generateVolume(f, g, cutoffMin, cutoffMax, globalRotationAxis);
+scene.add(volumeMeshX);
+
+
+
+// // Determine radii for the enclosing circles
+// const radiusStart = globalRotationAxis === XAXIS ? Math.abs(f(cutoffMin)) : cutoffMin;
+// const radiusEnd = globalRotationAxis === XAXIS ? Math.abs(f(cutoffMax)) : cutoffMax;
+
+// // Draw enclosing circles at the beginning and end of the parametric geometry
+// const startCircle = drawEnclosingCircle(radiusStart, f(cutoffMin), globalRotationAxis, 0xff0000); // Red circle at the start
+// const endCircle = drawEnclosingCircle(radiusEnd, f(cutoffMax), globalRotationAxis, 0x0000ff); // Blue circle at the end
 
 function animate() {
   if (filledArea) {
