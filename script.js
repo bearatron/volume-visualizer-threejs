@@ -58,7 +58,7 @@ function f(x) {
 }
 
 function g(x) {
-  return x**2;
+  return x;
 }
 
 const XAXIS = 0;
@@ -86,7 +86,7 @@ let min = Math.min(...intersection1);
 let max = Math.max(...intersection1);
 const cutoffMax = 5;
 const cutoffMin = 0.1; // You must set this to greater than 0 for logarithmic functions
-let globalRotationAxis = 0; // Can be 0 for x axis and 1 for y axis
+let globalRotationAxis = 1; // Can be 0 for x axis and 1 for y axis
 
 
 function generateParametricCurve(func, min, max, axisOfRotation) {
@@ -150,7 +150,6 @@ function drawFunctionsAndAreaBetween(func1, func2, color1, color2, fillColor) {
     effectiveMinX = cutoffMin;
     effectiveMaxX = cutoffMax;
   }
-
   // Generate points for the curves and the area between
   for (let x = effectiveMinX; x <= effectiveMaxX; x += step) {
     const y1 = func1(x); // First function
@@ -164,9 +163,19 @@ function drawFunctionsAndAreaBetween(func1, func2, color1, color2, fillColor) {
     curvePoints2.push(new THREE.Vector3(x, y2, 0)); // Points for the second curve
 
     // Add the points for the fill area
-    fillPoints.push(new THREE.Vector2(x, topY)); // Top boundary
-    fillPoints.unshift(new THREE.Vector2(x, bottomY)); // Bottom boundary
-  }
+    if (globalRotationAxis == 1 && ((g(1000) == 0) || f(1000) == 0)) {
+      // If one function is zero, draw the area from the non-zero function to the y-axis
+      const nonZeroFunc = g(1000) == 0 ? f : g; // Determine the non-zero function
+      const yValue = nonZeroFunc(x); // Get the value of the non-zero function at x
+    
+      fillPoints.push(new THREE.Vector2(x, yValue)); // Top boundary: Point on the non-zero function
+      fillPoints.unshift(new THREE.Vector2(0, yValue)); // Bottom boundary: Corresponding point on the y-axis
+    }
+     else {
+      fillPoints.push(new THREE.Vector2(x, topY)); // Top boundary
+      fillPoints.unshift(new THREE.Vector2(x, bottomY)); // Bottom boundary
+   }
+  } 
 
   // Draw the first curve
   const curveGeometry1 = new THREE.BufferGeometry().setFromPoints(curvePoints1);
@@ -284,21 +293,25 @@ function generateVolume(func1, func2, minX, maxX, axisOfRotation) {
   return new THREE.Mesh(geometry, material);
 }
 
-// Example usage:
 // Define the volume for rotation around the x-axis and add it to the scene
-const volumeMeshX = generateVolume(f, g, cutoffMin, cutoffMax, globalRotationAxis);
-scene.add(volumeMeshX);
+// const volumeMeshX = generateVolume(f, g, cutoffMin, cutoffMax, globalRotationAxis);
+if (((f(0) === 0)&&(f(1000) === 0))||((g(0) === 0)&&(g(1000) === 0))){
+  // scene.add(volumeMeshX);
+}
 
-
-
-// // Determine radii for the enclosing circles
-// const radiusStart = globalRotationAxis === XAXIS ? Math.abs(f(cutoffMin)) : cutoffMin;
-// const radiusEnd = globalRotationAxis === XAXIS ? Math.abs(f(cutoffMax)) : cutoffMax;
-
-// // Draw enclosing circles at the beginning and end of the parametric geometry
-// const startCircle = drawEnclosingCircle(radiusStart, f(cutoffMin), globalRotationAxis, 0xff0000); // Red circle at the start
-// const endCircle = drawEnclosingCircle(radiusEnd, f(cutoffMax), globalRotationAxis, 0x0000ff); // Blue circle at the end
-
+if(((f(0) === 0)&&(f(1000) === 0))||((g(0) === 0)&&(g(1000) === 0))){
+  // Determine radii for the enclosing circles
+  const radiusStart = globalRotationAxis === XAXIS ? Math.abs(f(cutoffMin)) : cutoffMin;
+  const radiusEnd = globalRotationAxis === XAXIS ? Math.abs(f(cutoffMax)) : cutoffMax;
+  if(globalRotationAxis==1){
+    const startCircle = drawEnclosingCircle(radiusStart, f(cutoffMin), globalRotationAxis, 0xff0000); // Red circle at the start
+    const endCircle = drawEnclosingCircle(radiusEnd, f(cutoffMax), globalRotationAxis, 0x0000ff); // Blue circle at the end
+  } else{
+    const startCircle = drawEnclosingCircle(radiusStart, cutoffMin, globalRotationAxis, 0xff0000); // Red circle at the start
+    const endCircle = drawEnclosingCircle(radiusEnd, cutoffMax, globalRotationAxis, 0x0000ff); // Blue circle at the end
+  }
+  // Draw enclosing circles at the beginning and end of the parametric geometry
+}
 function animate() {
   if (filledArea) {
     if (globalRotationAxis === XAXIS) filledArea.rotation.x += 0.01;
