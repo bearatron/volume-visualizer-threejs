@@ -54,11 +54,11 @@ scene.add(axesHelper);
 // cube();
 
 function f(x) {
-  return Math.log(x);
+  return 0.5;
 }
 
 function g(x) {
-  return x;
+  return 1;
 }
 
 const XAXIS = 0;
@@ -73,7 +73,7 @@ function findIntersectionPoints(func1, func2, start, end, step) {
   const intersections = [];
   for (let x = -start; x <= end; x += step) {
     if (Math.abs(func1(x) - func2(x)) < 0.01) {
-      if (!intersections.some(val => Math.abs(val - x) < 0.04)) {
+      if (!intersections.some(val => Math.abs(val - x) < 0.1)) {
         intersections.push(x);
       }
     }
@@ -86,7 +86,7 @@ let min = Math.min(...intersection1);
 let max = Math.max(...intersection1);
 const cutoffMax = 5;
 const cutoffMin = 0.1; // You must set this to greater than 0 for logarithmic functions
-let globalRotationAxis = 1; // Can be 0 for x axis and 1 for y axis
+let globalRotationAxis = 0; // Can be 0 for x axis and 1 for y axis
 
 
 function generateParametricCurve(func, min, max, axisOfRotation) {
@@ -357,7 +357,7 @@ function createOpenEndedCylinder(radiusTop, radiusBottom, bottomLocation, topLoc
   return cylinder;
 }
 
-if(intersection1.length==0){
+if(intersection1.length<2 && globalRotationAxis==1){
   let bottomLocation;
   let topLocation;
   let bottomLocationFinal;
