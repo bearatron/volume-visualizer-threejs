@@ -312,6 +312,80 @@ if(((f(0) === 0)&&(f(1000) === 0))||((g(0) === 0)&&(g(1000) === 0))){
   }
   // Draw enclosing circles at the beginning and end of the parametric geometry
 }
+
+
+function createOpenEndedCylinder(radiusTop, radiusBottom, bottomLocation, topLocation, radialSegments = 32, color = 0xff0000) {
+  // Calculate height and cylinder direction
+  const height = new THREE.Vector3()
+    .subVectors(topLocation, bottomLocation)
+    .length(); // Distance between top and bottom
+  
+  const cylinderGeometry = new THREE.CylinderGeometry(
+    radiusTop,
+    radiusBottom,
+    height,
+    radialSegments,
+    1, // One height segment
+    true // Open-ended cylinder (no caps)
+  );
+
+  // Create material
+  const cylinderMaterial = new THREE.MeshBasicMaterial({
+    color: color,
+    wireframe: true,
+    side: THREE.DoubleSide, // Ensure both sides of the surface are visible
+    opacity: 0.5, // Set the opacity to 50%
+  transparent: true, // Allow the material to be transparent
+  });
+
+  const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
+
+  // Position the cylinder's midpoint
+  const midpoint = new THREE.Vector3()
+    .addVectors(topLocation, bottomLocation)
+    .multiplyScalar(0.5);
+  cylinder.position.set(midpoint.x, midpoint.y, midpoint.z);
+
+  // Align the cylinder with the vector between bottomLocation and topLocation
+  const direction = new THREE.Vector3()
+    .subVectors(topLocation, bottomLocation)
+    .normalize();
+  const axis = new THREE.Vector3(0, 1, 0); // Default cylinder points along y-axis
+  const quaternion = new THREE.Quaternion().setFromUnitVectors(axis, direction);
+  cylinder.setRotationFromQuaternion(quaternion);
+
+  return cylinder;
+}
+
+if(intersection1.length==0){
+  let bottomLocation;
+  let topLocation;
+  let bottomLocationFinal;
+  let topLocationFinal;
+  if(f(cutoffMin)>g(cutoffMin)){
+    bottomLocation = new THREE.Vector3(0, g(cutoffMin), 0);
+    topLocation = new THREE.Vector3(0, f(cutoffMin), 0);
+  } else{
+    bottomLocation = new THREE.Vector3(0, f(cutoffMin), 0);
+    topLocation = new THREE.Vector3(0, g(cutoffMin), 0);
+  }
+  if(f(cutoffMax)>g(cutoffMax)){
+    bottomLocationFinal = new THREE.Vector3(0, g(cutoffMax), 0);
+    topLocationFinal = new THREE.Vector3(0, f(cutoffMax), 0); 
+  } else{
+    bottomLocationFinal = new THREE.Vector3(0, f(cutoffMax), 0);
+    topLocationFinal = new THREE.Vector3(0, g(cutoffMax), 0); 
+  }
+
+// Create the cylinder
+  const openCylinder = createOpenEndedCylinder(cutoffMin, cutoffMin, bottomLocation, topLocation, 64, 0x42f5cb);
+  const openCylinderFinal = createOpenEndedCylinder(cutoffMax, cutoffMax, bottomLocationFinal, topLocationFinal, 64, 0x42f5cb);
+
+  // Add it to the scene
+  scene.add(openCylinder);
+  scene.add(openCylinderFinal)
+}
+
 function animate() {
   if (filledArea) {
     if (globalRotationAxis === XAXIS) filledArea.rotation.x += 0.01;
