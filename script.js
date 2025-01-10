@@ -54,7 +54,7 @@ scene.add(axesHelper);
 // cube();
 
 function f(x) {
-  return 0.5;
+  return x;
 }
 
 function g(x) {
@@ -84,7 +84,7 @@ function findIntersectionPoints(func1, func2, start, end, step) {
 const intersection1 = findIntersectionPoints(f,g, 10, 10, 0.0001)
 let min = Math.min(...intersection1);
 let max = Math.max(...intersection1);
-const cutoffMax = 5;
+const cutoffMax = 3;
 const cutoffMin = 0.1; // You must set this to greater than 0 for logarithmic functions
 let globalRotationAxis = 0; // Can be 0 for x axis and 1 for y axis
 
@@ -117,7 +117,7 @@ function generateParametricCurve(func, min, max, axisOfRotation) {
 }
 
 
- console.log(intersection1);
+//  console.log(intersection1);
 
 const parametricMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
 const parametricMaterial2 = new THREE.LineBasicMaterial({ color: 0x0000ff});
@@ -213,105 +213,38 @@ const { filledArea, curveLine1, curveLine2 } = drawFunctionsAndAreaBetween(
   0x00ff00 // Green fill for the area between curves
 );
 
-function drawEnclosingCircle(radius, position, axis, color) {
-  const circleGeometry = new THREE.CircleGeometry(radius, 64); // High segment count for a smooth circle
-  const circleMaterial = new THREE.MeshBasicMaterial({
-    color: color,
-    side: THREE.DoubleSide,
-    transparent: true,
-    opacity: 0.5,
-  });
+// function drawEnclosingCircle(radius, position, axis, color) {
+//   const circleGeometry = new THREE.CircleGeometry(radius, 64); // High segment count for a smooth circle
+//   const circleMaterial = new THREE.MeshBasicMaterial({
+//     color: color,
+//     side: THREE.DoubleSide,
+//     transparent: true,
+//     opacity: 0.5,
+//   });
 
-  const circle = new THREE.Mesh(circleGeometry, circleMaterial);
+//   const circle = new THREE.Mesh(circleGeometry, circleMaterial);
 
-  // Rotate and position the circle based on the axis of rotation
-  if (axis === XAXIS) {
-    circle.rotation.y = Math.PI / 2; // Rotate around the y-axis to align with the x-axis
-    circle.position.set(position, 0, 0);
-  } else if (axis === YAXIS) {
-    circle.rotation.x = Math.PI / 2; // Rotate around the x-axis to align with the y-axis
-    circle.position.set(0, position, 0);
-  }
+//   // Rotate and position the circle based on the axis of rotation
+//   if (axis === XAXIS) {
+//     circle.rotation.y = Math.PI / 2; // Rotate around the y-axis to align with the x-axis
+//     circle.position.set(position, 0, 0);
+//   } else if (axis === YAXIS) {
+//     circle.rotation.x = Math.PI / 2; // Rotate around the x-axis to align with the y-axis
+//     circle.position.set(0, position, 0);
+//   }
 
-  scene.add(circle);
-  return circle;
-}
+//   scene.add(circle);
+//   return circle;
+// }
 
-
-function generateVolume(func1, func2, minX, maxX, axisOfRotation) {
-  const points = [];
-  const segments = 500; // Number of segments for the curves
-  const angleSteps = 100; // Number of steps for the rotation
-
-  for (let i = 0; i <= segments; i++) {
-    const x = minX + (i / segments) * (maxX - minX); // Current x value
-    const y1 = func1(x); // First function's value at x
-    const y2 = func2(x); // Second function's value at x
-
-    for (let j = 0; j <= angleSteps; j++) {
-      const angle = (j / angleSteps) * Math.PI * 2; // Current angle in the rotation
-
-      if (axisOfRotation === XAXIS) {
-        // Rotation around the x-axis
-        points.push(
-          x,                       // X coordinate (unchanged for x-axis rotation)
-          y1 * Math.cos(angle),    // Y coordinate (rotated around x-axis)
-          y1 * Math.sin(angle)     // Z coordinate (rotated around x-axis)
-        );
-        points.push(
-          x,
-          y2 * Math.cos(angle),
-          y2 * Math.sin(angle)
-        );
-      } else if (axisOfRotation === YAXIS) {
-        // Rotation around the y-axis
-        points.push(
-          x * Math.cos(angle),     // X coordinate (rotated around y-axis)
-          y1,                      // Y coordinate (unchanged for y-axis rotation)
-          x * Math.sin(angle)      // Z coordinate (rotated around y-axis)
-        );
-        points.push(
-          x * Math.cos(angle),
-          y2,
-          x * Math.sin(angle)
-        );
-      }
-    }
-  }
-
-  const vertices = new Float32Array(points);
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-
-  const material = new THREE.MeshBasicMaterial({
-    color: 0xf5c242,
-    side: THREE.DoubleSide,
-    opacity: 0.3,
-    transparent: true,
-  });
-
-  return new THREE.Mesh(geometry, material);
-}
-
-// Define the volume for rotation around the x-axis and add it to the scene
-// const volumeMeshX = generateVolume(f, g, cutoffMin, cutoffMax, globalRotationAxis);
-if (((f(0) === 0)&&(f(1000) === 0))||((g(0) === 0)&&(g(1000) === 0))){
-  // scene.add(volumeMeshX);
-}
-
-if(((f(0) === 0)&&(f(1000) === 0))||((g(0) === 0)&&(g(1000) === 0))){
-  // Determine radii for the enclosing circles
-  const radiusStart = globalRotationAxis === XAXIS ? Math.abs(f(cutoffMin)) : cutoffMin;
-  const radiusEnd = globalRotationAxis === XAXIS ? Math.abs(f(cutoffMax)) : cutoffMax;
-  if(globalRotationAxis==1){
-    const startCircle = drawEnclosingCircle(radiusStart, f(cutoffMin), globalRotationAxis, 0xff0000); // Red circle at the start
-    const endCircle = drawEnclosingCircle(radiusEnd, f(cutoffMax), globalRotationAxis, 0x0000ff); // Blue circle at the end
-  } else{
-    const startCircle = drawEnclosingCircle(radiusStart, cutoffMin, globalRotationAxis, 0xff0000); // Red circle at the start
-    const endCircle = drawEnclosingCircle(radiusEnd, cutoffMax, globalRotationAxis, 0x0000ff); // Blue circle at the end
-  }
-  // Draw enclosing circles at the beginning and end of the parametric geometry
-}
+// if(intersection1.length<2 && globalRotationAxis==0){
+//   // Determine radii for the enclosing circles
+//   const radiusStart = globalRotationAxis === XAXIS ? Math.abs(f(cutoffMin)) : cutoffMin;
+//   const radiusEnd = globalRotationAxis === XAXIS ? Math.abs(f(cutoffMax)) : cutoffMax;
+//   const startCircle = drawEnclosingCircle(radiusStart, cutoffMin, globalRotationAxis, 0xff0000); // Red circle at the start
+//   const endCircle = drawEnclosingCircle(radiusEnd, cutoffMax, globalRotationAxis, 0x0000ff); // Blue circle at the en
+//   // Draw enclosing circles at the beginning and end of the parametric geometry
+// }
 
 
 function createOpenEndedCylinder(radiusTop, radiusBottom, bottomLocation, topLocation, radialSegments = 32, color = 0xff0000) {
@@ -386,19 +319,62 @@ if(intersection1.length<2 && globalRotationAxis==1){
   scene.add(openCylinderFinal)
 }
 
+function createRing(outerRadius, innerRadius, color = 0xff0000, opacity = 0.5, location) {
+  // Create a shape for the outer circle
+  const shape = new THREE.Shape();
+  shape.absarc(0, 0, outerRadius, 0, Math.PI * 2, false);
+
+  // Add a hole for the inner circle
+  const hole = new THREE.Path();
+  hole.absarc(0, 0, innerRadius, 0, Math.PI * 2, true);
+  shape.holes.push(hole);
+
+  // Create geometry and material
+  const geometry = new THREE.ShapeGeometry(shape, 256);
+  const material = new THREE.MeshBasicMaterial({
+    color: color,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: opacity,
+  });
+
+    // Create the mesh
+    const ring = new THREE.Mesh(geometry, material);
+
+    ring.rotation.y = Math.PI / 2;
+    ring.position.x = location;
+
+    return ring;
+}
+if(globalRotationAxis === 0 && intersection1.length < 2){
+  if(f(cutoffMin)>g(cutoffMin)){
+    const ringMesh = createRing(f(cutoffMin), g(cutoffMin), 0x00ff00, 0.7, cutoffMin); // Outer radius: 2, Inner radius: 1
+    scene.add(ringMesh);
+  } else {
+    const ringMesh = createRing(g(cutoffMin), f(cutoffMin), 0x00ff00, 0.7, cutoffMin); // Outer radius: 2, Inner radius: 1
+    scene.add(ringMesh);
+  }
+  if(f(cutoffMax)>g(cutoffMax)){
+    const ringMesh = createRing(f(cutoffMax), g(cutoffMax), 0x00ff00, 0.7, cutoffMax); // Outer radius: 2, Inner radius: 1
+    scene.add(ringMesh);
+  } else {
+    const ringMesh = createRing(g(cutoffMax), f(cutoffMax), 0x00ff00, 0.7, cutoffMax); // Outer radius: 2, Inner radius: 1
+    scene.add(ringMesh);
+  }
+}
 function animate() {
   if (filledArea) {
-    if (globalRotationAxis === XAXIS) filledArea.rotation.x += 0.01;
-    if (globalRotationAxis === YAXIS) filledArea.rotation.y += 0.01;
+    if (globalRotationAxis === XAXIS) filledArea.rotation.x += 0.02;
+    if (globalRotationAxis === YAXIS) filledArea.rotation.y += 0.02;
   }
 
   if (curveLine1) {
-    if (globalRotationAxis === XAXIS) curveLine1.rotation.x += 0.01;
-    if (globalRotationAxis === YAXIS) curveLine1.rotation.y += 0.01;
+    if (globalRotationAxis === XAXIS) curveLine1.rotation.x += 0.02;
+    if (globalRotationAxis === YAXIS) curveLine1.rotation.y += 0.02;
   }
   if (curveLine2) {
-    if (globalRotationAxis === XAXIS) curveLine2.rotation.x += 0.01;
-    if (globalRotationAxis === YAXIS) curveLine2.rotation.y += 0.01;
+    if (globalRotationAxis === XAXIS) curveLine2.rotation.x += 0.02;
+    if (globalRotationAxis === YAXIS) curveLine2.rotation.y += 0.02;
   }
 
   controls.update();
