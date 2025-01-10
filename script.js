@@ -37,7 +37,6 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 const axesHelper = new THREE.AxesHelper(20);
-scene.add(axesHelper);
 
 function findIntersectionPoints(func1, func2, start, end, step) {
   if (((func1(0) === 0)&&(func1(1000) === 0)) || ((func2(0) === 0)&&(func2(1000) === 0))) {
@@ -97,12 +96,6 @@ const parametricCurve2 = new ParametricGeometry(generateParametricCurve(g, min, 
 const curveparam = new THREE.Line(parametricCurve1, parametricMaterial)
 const curveparam2 = new THREE.Line(parametricCurve2, parametricMaterial2)
 
-if(!((f(0) === 0)&&(f(1000) === 0))){
-  scene.add(curveparam)
-}
-if(!((g(0) === 0)&&(g(1000) === 0))){
-  scene.add(curveparam2)
-}
 
 
 function drawFunctionsAndAreaBetween(func1, func2, color1, color2, fillColor) {
@@ -152,13 +145,11 @@ function drawFunctionsAndAreaBetween(func1, func2, color1, color2, fillColor) {
   const curveGeometry1 = new THREE.BufferGeometry().setFromPoints(curvePoints1);
   const curveMaterial1 = new THREE.LineBasicMaterial({ color: color1 });
   const curveLine1 = new THREE.Line(curveGeometry1, curveMaterial1);
-  scene.add(curveLine1);
 
   // Draw the second curve
   const curveGeometry2 = new THREE.BufferGeometry().setFromPoints(curvePoints2);
   const curveMaterial2 = new THREE.LineBasicMaterial({ color: color2 });
   const curveLine2 = new THREE.Line(curveGeometry2, curveMaterial2);
-  scene.add(curveLine2);
 
   // Create the shape and geometry for the filled area
   const shape = new THREE.Shape(fillPoints);
@@ -283,6 +274,8 @@ function createRing(outerRadius, innerRadius, color = 0xff0000, opacity = 0.5, l
 
     return ring;
 }
+
+
 if(globalRotationAxis === 0 && intersection1.length < 2){
   if(f(cutoffMin)>g(cutoffMin)){
     const ringMesh = createRing(f(cutoffMin), g(cutoffMin), 0x00ff00, 0.7, cutoffMin); // Outer radius: 2, Inner radius: 1
@@ -299,6 +292,19 @@ if(globalRotationAxis === 0 && intersection1.length < 2){
     scene.add(ringMesh);
   }
 }
+
+
+scene.add(axesHelper);
+scene.add(curveLine1);
+scene.add(curveLine2);
+if(!((f(0) === 0)&&(f(1000) === 0))){
+  scene.add(curveparam)
+}
+if(!((g(0) === 0)&&(g(1000) === 0))){
+  scene.add(curveparam2)
+}
+
+
 function animate() {
   if (filledArea) {
     if (globalRotationAxis === XAXIS) filledArea.rotation.x += 0.02;
