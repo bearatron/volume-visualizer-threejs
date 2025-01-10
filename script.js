@@ -2,34 +2,22 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { ParametricGeometry } from "three/examples/jsm/Addons.js";
 
-function cube() {
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
 
-  const vertexShader = `
-  varying vec3 vNormal;
-  void main() {
-    vNormal = normalize(normalMatrix * normal);
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-  `;
-
-  const fragmentShader = `
-  varying vec3 vNormal;
-  void main() {
-    // Simple gradient effect based on the normal direction
-    float intensity = dot(vNormal, vec3(0.0, 0.0, 1.0));
-    gl_FragColor = vec4(intensity, intensity, intensity, 1.0);
-  }
-  `;
-
-  const material = new THREE.ShaderMaterial({
-    vertexShader: vertexShader,
-    fragmentShader: fragmentShader,
-  });
-
-  const cube = new THREE.Mesh(geometry, material);
-  scene.add(cube);
+function f(x) {
+  return 0.5;
 }
+
+function g(x) {
+  return 1;
+}
+
+const XAXIS = 0;
+const YAXIS = 1;
+
+const cutoffMax = 3; //Bounds
+const cutoffMin = 0.1; // You must set this to greater than 0 for logarithmic functions
+let globalRotationAxis = 0; // Can be 0 for x axis and 1 for y axis
+
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
@@ -51,20 +39,6 @@ controls.enableDamping = true;
 const axesHelper = new THREE.AxesHelper(20);
 scene.add(axesHelper);
 
-// cube();
-
-function f(x) {
-  return x;
-}
-
-function g(x) {
-  return 1;
-}
-
-const XAXIS = 0;
-const YAXIS = 1;
-
-
 function findIntersectionPoints(func1, func2, start, end, step) {
   if (((func1(0) === 0)&&(func1(1000) === 0)) || ((func2(0) === 0)&&(func2(1000) === 0))) {
     return [0]; // Special case when f(x) = 0 or g(x) = 0
@@ -84,9 +58,6 @@ function findIntersectionPoints(func1, func2, start, end, step) {
 const intersection1 = findIntersectionPoints(f,g, 10, 10, 0.0001)
 let min = Math.min(...intersection1);
 let max = Math.max(...intersection1);
-const cutoffMax = 3;
-const cutoffMin = 0.1; // You must set this to greater than 0 for logarithmic functions
-let globalRotationAxis = 0; // Can be 0 for x axis and 1 for y axis
 
 
 function generateParametricCurve(func, min, max, axisOfRotation) {
@@ -212,40 +183,6 @@ const { filledArea, curveLine1, curveLine2 } = drawFunctionsAndAreaBetween(
   0x0000ff, // Blue line for the second function
   0x00ff00 // Green fill for the area between curves
 );
-
-// function drawEnclosingCircle(radius, position, axis, color) {
-//   const circleGeometry = new THREE.CircleGeometry(radius, 64); // High segment count for a smooth circle
-//   const circleMaterial = new THREE.MeshBasicMaterial({
-//     color: color,
-//     side: THREE.DoubleSide,
-//     transparent: true,
-//     opacity: 0.5,
-//   });
-
-//   const circle = new THREE.Mesh(circleGeometry, circleMaterial);
-
-//   // Rotate and position the circle based on the axis of rotation
-//   if (axis === XAXIS) {
-//     circle.rotation.y = Math.PI / 2; // Rotate around the y-axis to align with the x-axis
-//     circle.position.set(position, 0, 0);
-//   } else if (axis === YAXIS) {
-//     circle.rotation.x = Math.PI / 2; // Rotate around the x-axis to align with the y-axis
-//     circle.position.set(0, position, 0);
-//   }
-
-//   scene.add(circle);
-//   return circle;
-// }
-
-// if(intersection1.length<2 && globalRotationAxis==0){
-//   // Determine radii for the enclosing circles
-//   const radiusStart = globalRotationAxis === XAXIS ? Math.abs(f(cutoffMin)) : cutoffMin;
-//   const radiusEnd = globalRotationAxis === XAXIS ? Math.abs(f(cutoffMax)) : cutoffMax;
-//   const startCircle = drawEnclosingCircle(radiusStart, cutoffMin, globalRotationAxis, 0xff0000); // Red circle at the start
-//   const endCircle = drawEnclosingCircle(radiusEnd, cutoffMax, globalRotationAxis, 0x0000ff); // Blue circle at the en
-//   // Draw enclosing circles at the beginning and end of the parametric geometry
-// }
-
 
 function createOpenEndedCylinder(radiusTop, radiusBottom, bottomLocation, topLocation, radialSegments = 32, color = 0xff0000) {
   // Calculate height and cylinder direction
