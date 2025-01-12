@@ -4,19 +4,19 @@ import { ParametricGeometry } from "three/examples/jsm/Addons.js";
 
 
 function f(x) {
-  return 0.5;
+  return x**2;
 }
 
 function g(x) {
-  return 1;
+  return 0;
 }
 
 const XAXIS = 0;
 const YAXIS = 1;
 
-const cutoffMax = 3; //Bounds
-const cutoffMin = 0.1; // You must set this to greater than 0 for logarithmic functions
-let globalRotationAxis = 0; // Can be 0 for x axis and 1 for y axis
+const cutoffMax = 0.1; //Bounds
+const cutoffMin = -0.1; // You must set this to greater than 0 for logarithmic functions
+let globalRotationAxis = 1; // Can be 0 for x axis and 1 for y axis
 
 
 const scene = new THREE.Scene();
@@ -116,6 +116,7 @@ function drawFunctionsAndAreaBetween(func1, func2, color1, color2, fillColor) {
   }
   // Generate points for the curves and the area between
   for (let x = effectiveMinX; x <= effectiveMaxX; x += step) {
+    Number( x.toPrecision(10) )
     const y1 = func1(x); // First function
     const y2 = func2(x); // Second function
 
@@ -127,20 +128,19 @@ function drawFunctionsAndAreaBetween(func1, func2, color1, color2, fillColor) {
     curvePoints2.push(new THREE.Vector3(x, y2, 0)); // Points for the second curve
 
     // Add the points for the fill area
-    if (globalRotationAxis == 1 && ((g(1000) == 0) || f(1000) == 0)) {
+    if (globalRotationAxis === 1 && ((g(1000) == 0) || f(1000) == 0)) {
       // If one function is zero, draw the area from the non-zero function to the y-axis
       const nonZeroFunc = g(1000) == 0 ? f : g; // Determine the non-zero function
       const yValue = nonZeroFunc(x); // Get the value of the non-zero function at x
-    
-      fillPoints.push(new THREE.Vector2(x, yValue)); // Top boundary: Point on the non-zero function
-      fillPoints.unshift(new THREE.Vector2(0, yValue)); // Bottom boundary: Corresponding point on the y-axis
+      fillPoints.push(new THREE.Vector2(0, yValue)); // Top boundary: Point on the non-zero function
+      fillPoints.unshift(new THREE.Vector2(x, yValue)); // Bottom boundary: Corresponding point on the y-axis
     }
      else {
       fillPoints.push(new THREE.Vector2(x, topY)); // Top boundary
       fillPoints.unshift(new THREE.Vector2(x, bottomY)); // Bottom boundary
    }
   } 
-
+  console.log(intersection1)
   // Draw the first curve
   const curveGeometry1 = new THREE.BufferGeometry().setFromPoints(curvePoints1);
   const curveMaterial1 = new THREE.LineBasicMaterial({ color: color1 });
@@ -218,7 +218,7 @@ function createOpenEndedCylinder(radiusTop, radiusBottom, bottomLocation, topLoc
   return cylinder;
 }
 
-if(intersection1.length<2 && globalRotationAxis==1){
+if(intersection1.length<2 && globalRotationAxis==1 && g(1000) != 0){
   let bottomLocation;
   let topLocation;
   let bottomLocationFinal;
@@ -269,30 +269,47 @@ function createRing(outerRadius, innerRadius, color = 0xff0000, opacity = 0.5, l
     // Create the mesh
     const ring = new THREE.Mesh(geometry, material);
 
-    ring.rotation.y = Math.PI / 2;
-    ring.position.x = location;
-
+    if (globalRotationAxis === 0){
+      ring.rotation.y = Math.PI / 2;
+      ring.position.x = location;
+    } else {
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = location;
+    }
     return ring;
 }
 
-
 if(globalRotationAxis === 0 && intersection1.length < 2){
-  if(f(cutoffMin)>g(cutoffMin)){
+  if(Math.abs(f(cutoffMin))>Math.abs(g(cutoffMin))){
     const ringMesh = createRing(f(cutoffMin), g(cutoffMin), 0x00ff00, 0.7, cutoffMin); // Outer radius: 2, Inner radius: 1
     scene.add(ringMesh);
+
   } else {
     const ringMesh = createRing(g(cutoffMin), f(cutoffMin), 0x00ff00, 0.7, cutoffMin); // Outer radius: 2, Inner radius: 1
     scene.add(ringMesh);
+
   }
-  if(f(cutoffMax)>g(cutoffMax)){
+  if(Math.abs(f(cutoffMax))>Math.abs(g(cutoffMax))){
     const ringMesh = createRing(f(cutoffMax), g(cutoffMax), 0x00ff00, 0.7, cutoffMax); // Outer radius: 2, Inner radius: 1
     scene.add(ringMesh);
   } else {
-    const ringMesh = createRing(g(cutoffMax), f(cutoffMax), 0x00ff00, 0.7, cutoffMax); // Outer radius: 2, Inner radius: 1
+    const ringMesh = createRing(g(cutoffMax), f(cutoffMax), 0x0000ff, 0.7, cutoffMax); // Outer radius: 2, Inner radius: 1
     scene.add(ringMesh);
+    
   }
 }
 
+if (globalRotationAxis === 1 && intersection1.length < 2 && g(1000) === 0){
+  if(f(cutoffMax)-f(cutoffMin)===0){
+    const ringMesh = createRing(cutoffMax, 0, 0x00ff00, 0.7, f(cutoffMax)); // Outer radius: 2, Inner radius: 1
+    scene.add(ringMesh);
+  } else {
+    const ringMesh = createRing(cutoffMax, 0, 0x00ff00, 0.7, f(cutoffMax)); // Outer radius: 2, Inner radius: 1
+    scene.add(ringMesh);
+    const ringMesh2 = createRing(cutoffMin, 0, 0x00ff00, 0.7, f(cutoffMin)); // Outer radius: 2, Inner radius: 1
+    scene.add(ringMesh2);
+  }
+}
 
 scene.add(axesHelper);
 scene.add(curveLine1);
