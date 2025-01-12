@@ -4,7 +4,7 @@ import { ParametricGeometry } from "three/examples/jsm/Addons.js";
 
 
 function f(x) {
-  return x**2;
+  return x;
 }
 
 function g(x) {
@@ -133,8 +133,16 @@ function drawFunctionsAndAreaBetween(func1, func2, color1, color2, fillColor) {
       const nonZeroFunc = g(1000) == 0 ? f : g; // Determine the non-zero function
       const yValue = nonZeroFunc(x); // Get the value of the non-zero function at x
       fillPoints.push(new THREE.Vector2(0, yValue)); // Top boundary: Point on the non-zero function
-      fillPoints.unshift(new THREE.Vector2(x, yValue)); // Bottom boundary: Corresponding point on the y-axis
-    }
+      if(f(cutoffMin)<f(cutoffMax)){
+        if(x<0){
+        fillPoints.unshift(new THREE.Vector2(x, yValue)); // Bottom boundary: Corresponding point on the y-axis
+        } else {
+          fillPoints.unshift(new THREE.Vector2(-x, yValue)); // Bottom boundary: Corresponding point on the y-axis
+        }
+      } else{
+        fillPoints.unshift(new THREE.Vector2(x, yValue)); // Bottom boundary: Corresponding point on the y-axis
+      }
+    } 
      else {
       fillPoints.push(new THREE.Vector2(x, topY)); // Top boundary
       fillPoints.unshift(new THREE.Vector2(x, bottomY)); // Bottom boundary
